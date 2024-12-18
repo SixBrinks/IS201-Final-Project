@@ -1,0 +1,25 @@
+body {
+    background-color: antiquewhite;
+    color: black;
+    font-family: Arial, Helvetica, sans-serif;
+}
+h3 {
+    color: grey;
+    font-style: italic;
+    text-decoration: underline;
+}
+.box {
+    padding:15px;
+    background-color:rgb(219, 230, 241);
+    border: 5px solid gainsboro;
+    margin-left: 800px;
+    width: 300px;
+    height: 125px;
+    position: absolute
+}
+.header {
+    border: 16px solid lightcoral;
+}
+.footer {
+    border: 32px solid lightcoral;
+}
