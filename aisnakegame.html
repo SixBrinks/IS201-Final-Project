@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #2e2e2e;
+            color: white;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .game-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            border: 3px solid #fff;
+            margin-right: 20px;
+        }
+
+        h1 {
+            color: #f1c40f;
+            font-size: 36px;
+        }
+
+        #score {
+            color: #f39c12;
+            font-size: 24px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+
+        #gameOverMessage {
+            color: #e74c3c;
+            font-size: 30px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #restartButton {
+            padding: 15px 25px;
+            background-color: #3498db;
+            color: white;
+            font-size: 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            display: none;
+        }
+
+        #restartButton:hover {
+            background-color: #2980b9;
+        }
+
+        #scoreContainer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            color: #f39c12;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Snake Game</h1>
+
+<div class="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <button id="restartButton" onclick="restartGame()">Restart</button>
+</div>
+
+<div id="gameOverMessage">Game Over!</div>
+<div id="scoreContainer">Score: 0</div>
+
+<script>
+    const box = 20; // Size of each block
+    let score = 0;
+
+    // Snake's initial position
+    let snake;
+    // Food's initial position
+    let food;
+    // Obstacles
+    let obstacles = [];
+    // Snake's direction
+    let dir;
+
+    // Function to initialize game
+    function initGame() {
+        snake = [{x: 9 * box, y: 9 * box}];
+        food = {
+            x: Math.floor(Math.random() * (canvas.width / box - 1)) * box,
+            y: Math.floor(Math.random() * (canvas.height / box - 1)) * box
+        };
+        dir = null;
+        score = 0;
+        obstacles = [];
+        document.getElementById('scoreContainer').innerText = "Score: " + score;
+        document.getElementById('gameOverMessage').style.display = "none";
+        document.getElementById('restartButton').style.display = "none";
+        
+        // Add obstacles (now 30 random obstacles)
+        for (let i = 0; i < 30; i++) {
+            obstacles.push({
+                x: Math.floor(Math.random() * (canvas.width / box - 1)) * box,
+                y: Math.floor(Math.random() * (canvas.height / box - 1)) * box
+            });
+        }
+    }
+
+    // Dynamically resize the canvas based on window size
+    function resizeCanvas() {
+        const width = Math.floor(window.innerWidth * 0.6); // 60% of window width
+        const height = Math.floor(window.innerHeight * 0.6); // 60% of window height
+        canvas.width = width;
+        canvas.height = height;
+    }
+
+    // Game's main loop
+    function draw() {
+        // Clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw obstacles
+        ctx.fillStyle = "#34495e"; // Dark grey obstacles
+        for (let i = 0; i < obstacles.length; i++) {
+            ctx.fillRect(obstacles[i].x, obstacles[i].y, box, box);
+        }
+
+        // Draw the snake
+        for (let i = 0; i < snake.length; i++) {
+            ctx.fillStyle = i === 0 ? "#1abc9c" : "#ecf0f1"; // Head is teal, body is light gray
+            ctx.fillRect(snake[i].x, snake[i].y, box, box);
+        }
+
+        // Draw the food (apple)
+        ctx.fillStyle = "#e74c3c"; // Red apple food
+        ctx.fillRect(food.x, food.y, box, box);
+
+        // Move the snake
+        let snakeX = snake[0].x;
+        let snakeY = snake[0].y;
+
+        if (dir === "LEFT") snakeX -= box;
+        if (dir === "RIGHT") snakeX += box;
+        if (dir === "UP") snakeY -= box;
+        if (dir === "DOWN") snakeY += box;
+
+        // Snake eats food
+        if (snakeX === food.x && snakeY === food.y) {
+            score++;
+            food = {
+                x: Math.floor(Math.random() * (canvas.width / box - 1)) * box,
+                y: Math.floor(Math.random() * (canvas.height / box - 1)) * box
+            };
+        } else {
+            snake.pop();
+        }
+
+        // Add new head to snake
+        const newHead = {x: snakeX, y: snakeY};
+
+        // Check for collisions with walls, itself, or obstacles
+        if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake) || collisionWithObstacles(newHead)) {
+            gameOver();
+            return;
+        }
+
+        snake.unshift(newHead);
+
+        // Update score display
+        document.getElementById('scoreContainer').innerText = "Score: " + score;
+    }
+
+    // Check if snake collides with itself
+    function collision(head, array) {
+        for (let i = 0; i < array.length; i++) {
+            if (head.x === array[i].x && head.y === array[i].y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Check if snake collides with obstacles
+    function collisionWithObstacles(head) {
+        for (let i = 0; i < obstacles.length; i++) {
+            if (head.x === obstacles[i].x && head.y === obstacles[i].y) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Game over logic
+    function gameOver() {
+        document.getElementById('gameOverMessage').style.display = "block";
+        document.getElementById('restartButton').style.display = "inline-block";
+        clearInterval(game);
+    }
+
+    // Restart the game
+    function restartGame() {
+        initGame();
+        game = setInterval(draw, 100); // Start the game loop again
+    }
+
+    // Change direction based on key press
+    document.addEventListener("keydown", direction);
+
+    function direction(event) {
+        if (event.keyCode === 37 && dir !== "RIGHT") {
+            dir = "LEFT";
+        } else if (event.keyCode === 38 && dir !== "DOWN") {
+            dir = "UP";
+        } else if (event.keyCode === 39 && dir !== "LEFT") {
+            dir = "RIGHT";
+        } else if (event.keyCode === 40 && dir !== "UP") {
+            dir = "DOWN";
+        }
+    }
+
+    // Initialize game when the page is loaded
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    resizeCanvas(); // Resize canvas to fit the screen
+    window.addEventListener("resize", resizeCanvas); // Resize canvas on window resize
+    initGame();
+    let game = setInterval(draw, 100); // Start the game loop
+
+</script>
+
+</body>
+</html>
